@@ -1,0 +1,8 @@
+// chaves provaveis
+
+TEMPERATURA EM F°
+        var primaryService = '00001800-0000-1000-8000-00805f9b34fb'
+        var characteristic = '00002a00-0000-1000-8000-00805f9b34fb'
+
+chrome://bluetooth-internals/#devices/c2:fc:50:9f:b2:a9
+vídeo indicador: https://www.youtube.com/watch?v=TsXUcAKi790

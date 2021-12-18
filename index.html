@@ -8,14 +8,94 @@
     <title>Bluetootj</title>
 </head>
 <body>
-    <button class="btn">Click</button>
+    <button class="btn">read</button>
+    <button class="start">Start</button>
+    <br><br>
+    <div class="show_here"></div>
     <script type="text/javascript">
-        $('.btn').on('click', function () {
-            navigator.bluetooth.requestDevice({ filters: [{ services: ['battery_service'] }] })
-                .then(device => { console.log(device) })
-                .catch(error => { console.error(error); });
+        var deviceName = 'B01H_M4'
+        var primaryService = 'battery_service'
+        var characteristic = 'battery_level'
+        let bluetoothDeviceDetected
+        var gattCharacteristic
+        $('.btn').on('pointerup', function () {
+            read();
         });
 
+        $('.start').on('pointerup', function () {
+            read();
+        });
+
+        function getDeviceInfo() {
+            let options = {
+                optionalServices: [primaryService],
+                filters: [
+                    { "name": deviceName }
+                ]
+            }
+            return navigator.bluetooth.requestDevice(options).then(device => {
+                bluetoothDeviceDetected = device
+            }).catch(error => {
+                console.log('Argh! ' + error);
+                $('.show_here').append('<br>'+ error.message);
+            })
+        }
+
+
+
+        function read () {
+            return (bluetoothDeviceDetected ? Promise.resolve() : getDeviceInfo())
+            .then(connectGATT)
+            .then(_ => {
+                return gattCharacteristic.readValue()
+            })
+            .catch( error => {
+                console.log({error});
+                $('.show_here').append('<br>'+ error.message);
+            })
+        }
+
+
+        function connectGATT() {
+            if (bluetoothDeviceDetected.gatt.connected && gattCharacteristic) {
+            return Promise.resolve()
+            }
+
+            return bluetoothDeviceDetected.gatt.connect()
+            .then(server => {
+            console.log('Getting GATT Service...')
+            $('.show_here').append('<br>'+ 'Getting GATT Service...');
+            return server.getPrimaryService(primaryService)
+            })
+            .then(service => {
+            console.log('Getting GATT Characteristic...')
+            $('.show_here').append('<br>'+ 'Getting GATT Characteristic...');
+            return service.getCharacteristic(characteristic)
+            })
+            .then(characteristic => {
+            gattCharacteristic = characteristic
+            gattCharacteristic.addEventListener('characteristicvaluechanged',
+                handleChangedValue)
+            })
+        }
+        function handleChangedValue(event) {
+            let value = event.target.value.getUint8(0)
+            var now = new Date()
+            console.log('> ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + ' UV Index is ' + value)
+            $('.show_here').append('<br>'+ '> ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + ' UV Index is ' + value);
+        }
+
+        function start() {
+            gattCharacteristic.startNotifications()
+            .then(_ => {
+            console.log('Start reading...')
+            $('.show_here').append('<br>'+ 'Start reading...');
+            })
+            .catch(error => {
+            console.log('[ERROR] Start: ' + error)
+            $('.show_here').append('<br>'+ error.message);
+            })
+        }
         // navigator.bluetooth.requestDevice()
     </script>
 </body>
